@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DROPMARK — Custom Label Water Bottles</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --ink:#0c0c0c;--paper:#f5f0e8;--cream:#ede8dc;--water:#2563eb;
+  --water-light:#60a5fa;--drop:#0ea5e9;--text:#1a1a1a;--muted:#6b6b6b;
+  --border:#d4cfc3;--card:#eee9db;
+}
+body{background:var(--paper);color:var(--text);font-family:'DM Sans',sans-serif;cursor:none;overflow-x:hidden}
+#cursor{width:10px;height:10px;background:var(--water);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .3s,height .3s,background .3s;mix-blend-mode:multiply}
+#cursor-ring{width:36px;height:36px;border:1.5px solid var(--water);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .3s,height .3s,opacity .3s;opacity:.5}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 4%;height:68px;background:var(--paper);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;letter-spacing:3px;text-transform:uppercase;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:8px}
+.nav-logo-dot{width:10px;height:10px;background:var(--water);border-radius:50%;display:inline-block;animation:dotpulse 2s ease-in-out infinite}
+@keyframes dotpulse{0%,100%{transform:scale(1);background:var(--water)}50%{transform:scale(1.4);background:var(--drop)}}
+.nav-links{display:flex;align-items:center;gap:0;list-style:none}
+.nav-links li a{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:.5rem 1.2rem;position:relative;transition:color .2s}
+.nav-links li a::after{content:'';position:absolute;bottom:-2px;left:50%;right:50%;height:2px;background:var(--water);transition:left .25s,right .25s}
+.nav-links li a:hover{color:var(--ink)}
+.nav-links li a:hover::after,.nav-links li a.active::after{left:1.2rem;right:1.2rem}
+.nav-links li a.active{color:var(--ink)}
+.nav-cta-btn{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;background:var(--ink);color:var(--paper);border:none;padding:.6rem 1.5rem;border-radius:2px;cursor:none;text-decoration:none;transition:background .2s,color .2s;display:inline-block}
+.nav-cta-btn:hover{background:var(--water);color:#fff}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:none;padding:4px}
+.hamburger span{width:24px;height:2px;background:var(--ink);transition:all .3s;display:block}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.mobile-menu{display:none;position:fixed;top:68px;left:0;right:0;bottom:0;background:var(--paper);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:2rem;border-top:1px solid var(--border)}
+.mobile-menu.open{display:flex}
+.mobile-menu a{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:700;text-transform:uppercase;letter-spacing:3px;color:var(--ink);text-decoration:none;transition:color .2s}
+.mobile-menu a:hover{color:var(--water)}
+
+/* PAGES */
+.page{display:none;min-height:100vh;padding-top:68px}
+.page.active{display:block}
+
+/* HOME — HERO */
+.hero{min-height:calc(100vh - 68px);display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+.hero-left{padding:6rem 5% 4rem;display:flex;flex-direction:column;justify-content:center;position:relative}
+.hero-eyebrow{display:flex;align-items:center;gap:12px;margin-bottom:2.5rem}
+.hero-eyebrow-line{width:40px;height:1px;background:var(--water)}
+.hero-eyebrow span{font-family:'Syne',sans-serif;font-size:.72rem;letter-spacing:3px;text-transform:uppercase;color:var(--water);font-weight:700}
+.hero-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(3.8rem,5.5vw,6rem);line-height:.92;letter-spacing:-1px;color:var(--ink);margin-bottom:2rem}
+.hero-title em{font-style:normal;color:var(--water);position:relative;display:inline-block}
+.hero-title em::after{content:'';position:absolute;bottom:4px;left:0;right:0;height:5px;background:var(--water);opacity:.2;border-radius:10px}
+.hero-desc{font-size:1rem;line-height:1.75;color:var(--muted);max-width:400px;margin-bottom:3rem;font-weight:300}
+.hero-actions{display:flex;align-items:center;gap:2rem;flex-wrap:wrap}
+.btn-fill{background:var(--ink);color:var(--paper);font-family:'Syne',sans-serif;font-weight:700;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;padding:.9rem 2.2rem;border:2px solid var(--ink);border-radius:2px;text-decoration:none;cursor:none;transition:background .2s,color .2s,border-color .2s;display:inline-block}
+.btn-fill:hover{background:var(--water);border-color:var(--water);color:#fff}
+.btn-ghost{font-family:'Syne',sans-serif;font-weight:600;font-size:.8rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink);text-decoration:none;cursor:none;display:flex;align-items:center;gap:8px;transition:gap .2s,color .2s}
+.btn-ghost:hover{gap:14px;color:var(--water)}
+.btn-ghost::after{content:'→';font-size:1rem}
+.hero-right{background:var(--ink);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.hero-right::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(245,240,232,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(245,240,232,.04) 1px,transparent 1px);background-size:40px 40px}
+.hero-visual-wrap{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:4rem 2rem}
+.main-bottle{animation:floatY 5s ease-in-out infinite;filter:drop-shadow(0 40px 80px rgba(37,99,235,.6))}
+@keyframes floatY{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-20px) rotate(-3deg)}}
+.label-tag{position:absolute;background:var(--paper);border-radius:4px;padding:.7rem 1rem;font-family:'Syne',sans-serif;font-weight:700;font-size:.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink);white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.label-tag-1{top:20%;right:8%;animation:tf1 4s ease-in-out infinite}
+.label-tag-2{bottom:25%;left:6%;animation:tf2 4.5s ease-in-out infinite}
+.label-tag-3{top:55%;right:5%;animation:tf3 3.8s ease-in-out infinite}
+@keyframes tf1{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes tf2{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+@keyframes tf3{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.label-tag::before{content:'';display:inline-block;width:6px;height:6px;background:var(--water);border-radius:50%;margin-right:6px;vertical-align:middle}
+
+/* MARQUEE */
+.marquee-strip{background:var(--water);overflow:hidden;padding:.7rem 0;white-space:nowrap}
+.marquee-track{display:inline-block;animation:marqueeScroll 18s linear infinite}
+.marquee-track span{font-family:'Syne',sans-serif;font-weight:700;font-size:.75rem;letter-spacing:3px;text-transform:uppercase;color:#fff;margin:0 2.5rem}
+.marquee-track span.dot{color:rgba(255,255,255,.4);margin:0;font-size:.6rem}
+@keyframes marqueeScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* NUMBERS */
+.numbers{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.number-item{padding:3rem 2rem;border-right:1px solid var(--border);transition:background .3s}
+.number-item:last-child{border-right:none}
+.number-item:hover{background:var(--card)}
+.number-val{font-family:'Syne',sans-serif;font-weight:800;font-size:3.5rem;color:var(--ink);line-height:1;margin-bottom:.5rem}
+.number-val sup{font-size:1.5rem;color:var(--water);vertical-align:super}
+.number-label{font-size:.82rem;color:var(--muted);font-weight:400;line-height:1.5}
+
+/* HOME ABOUT */
+.section-home-about{padding:7rem 5%;display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center}
+.section-tag{font-family:'Syne',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--water);margin-bottom:1.5rem;display:flex;align-items:center;gap:10px}
+.section-tag::before{content:'';width:30px;height:1px;background:var(--water)}
+.about-heading{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2.2rem,3.5vw,3rem);line-height:1.05;color:var(--ink);margin-bottom:1.5rem;letter-spacing:-.5px}
+.about-body{font-size:.97rem;line-height:1.8;color:var(--muted);font-weight:300;margin-bottom:2.5rem}
+.about-list{list-style:none;display:flex;flex-direction:column;gap:.9rem}
+.about-list li{display:flex;align-items:flex-start;gap:12px;font-size:.9rem;color:var(--text)}
+.about-list li::before{content:'';width:18px;height:18px;background:var(--water);border-radius:50%;flex-shrink:0;margin-top:2px}
+.about-visual-side{position:relative}
+.about-img-box{background:var(--card);border:1px solid var(--border);border-radius:4px;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.about-img-box::after{content:'YOUR BRAND\AHere';white-space:pre;position:absolute;bottom:2rem;left:2rem;font-family:'Syne',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:2px;color:var(--water);text-transform:uppercase;line-height:1.6}
+.about-float-card{position:absolute;bottom:-2rem;right:-2rem;background:var(--water);color:#fff;padding:1.5rem;border-radius:4px;width:180px;box-shadow:0 20px 50px rgba(37,99,235,.3)}
+.afc-num{font-family:'Syne',sans-serif;font-weight:800;font-size:2.5rem;line-height:1;margin-bottom:.3rem}
+.afc-label{font-size:.78rem;font-weight:400;opacity:.85;line-height:1.4}
+
+/* PAGE HERO */
+.page-hero{padding:5rem 5% 3rem;display:flex;flex-direction:column;align-items:flex-start;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+.page-hero-bg-text{position:absolute;right:-2%;top:50%;transform:translateY(-50%);font-family:'Syne',sans-serif;font-weight:800;font-size:12rem;color:rgba(12,12,12,.04);pointer-events:none;user-select:none;letter-spacing:-5px;white-space:nowrap}
+.page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(3rem,5vw,5rem);line-height:.95;letter-spacing:-1.5px;color:var(--ink);margin-bottom:1.5rem;position:relative}
+.page-subtitle{font-size:1rem;color:var(--muted);font-weight:300;max-width:500px;line-height:1.7}
+
+/* PRODUCTS PAGE */
+.products-section{padding:4rem 5%}
+.products-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.product-item{padding:3rem 2.5rem;border-right:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;transition:background .3s;overflow:hidden}
+.product-item:hover{background:var(--card)}
+.product-item:nth-child(3n){border-right:none}
+.product-item:nth-last-child(-n+3){border-bottom:none}
+.product-num{font-family:'Syne',sans-serif;font-weight:800;font-size:5rem;color:rgba(12,12,12,.06);position:absolute;top:-.5rem;right:1rem;line-height:1;pointer-events:none}
+.product-bottle-wrap{height:160px;display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem}
+.product-bottle-wrap svg{transition:transform .4s;filter:drop-shadow(0 10px 30px rgba(37,99,235,.2))}
+.product-item:hover .product-bottle-wrap svg{transform:translateY(-8px) scale(1.05)}
+.product-item-name{font-family:'Syne',sans-serif;font-weight:700;font-size:1.15rem;color:var(--ink);margin-bottom:.5rem}
+.product-item-desc{font-size:.85rem;color:var(--muted);line-height:1.65;margin-bottom:1.2rem;font-weight:300}
+.product-badge{display:inline-flex;align-items:center;gap:6px;font-family:'Syne',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--water);border:1px solid var(--water);padding:.3rem .8rem;border-radius:2px}
+
+/* PROCESS */
+.process-section{padding:5rem 5%;border-top:1px solid var(--border);background:var(--ink)}
+.process-section .section-tag{color:var(--water-light)}
+.process-section .section-tag::before{background:var(--water-light)}
+.process-heading{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2.2rem,3.5vw,3rem);color:var(--paper);margin-bottom:3rem;letter-spacing:-.5px}
+.process-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid rgba(245,240,232,.1);border-radius:4px;overflow:hidden}
+.process-step{padding:2.5rem 2rem;border-right:1px solid rgba(245,240,232,.1);transition:background .3s}
+.process-step:last-child{border-right:none}
+.process-step:hover{background:rgba(245,240,232,.04)}
+.ps-num{font-family:'Syne',sans-serif;font-weight:800;font-size:.7rem;letter-spacing:2px;color:var(--water);margin-bottom:1rem}
+.ps-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--paper);margin-bottom:.7rem}
+.ps-desc{font-size:.85rem;color:rgba(245,240,232,.5);line-height:1.65;font-weight:300}
+
+/* ABOUT PAGE */
+.about-page-hero{display:grid;grid-template-columns:1fr 1fr;min-height:calc(60vh - 68px);border-bottom:1px solid var(--border)}
+.aph-left{padding:5rem 5%;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border)}
+.aph-right{background:var(--ink);display:flex;align-items:center;justify-content:center;padding:4rem;position:relative;overflow:hidden}
+.aph-right::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(245,240,232,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(245,240,232,.03) 1px,transparent 1px);background-size:30px 30px}
+.aph-quote{font-family:'Syne',sans-serif;font-weight:700;font-size:1.5rem;color:var(--paper);line-height:1.4;position:relative;z-index:1;text-align:center}
+.aph-quote em{font-style:normal;color:var(--water-light)}
+.about-values{padding:5rem 5%;display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid var(--border)}
+.value-item{padding:3rem 2.5rem;border-right:1px solid var(--border);transition:background .3s}
+.value-item:last-child{border-right:none}
+.value-item:hover{background:var(--card)}
+.value-icon{font-size:2rem;margin-bottom:1.2rem;display:block}
+.value-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:var(--ink);margin-bottom:.7rem}
+.value-desc{font-size:.87rem;color:var(--muted);line-height:1.7;font-weight:300}
+.about-story{padding:6rem 5%;display:grid;grid-template-columns:1fr 2fr;gap:5rem;align-items:start;border-bottom:1px solid var(--border)}
+.story-label{font-family:'Syne',sans-serif;font-weight:800;font-size:3rem;color:var(--ink);line-height:1;letter-spacing:-1px;position:sticky;top:100px}
+.story-content p{font-size:1.05rem;line-height:1.85;color:var(--muted);font-weight:300;margin-bottom:1.5rem}
+.story-content p strong{color:var(--ink);font-weight:500}
+
+/* CONTACT PAGE */
+.contact-layout{display:grid;grid-template-columns:1fr 1.5fr;min-height:calc(100vh - 68px)}
+.contact-left{padding:5rem 4%;background:var(--ink);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
+.contact-left::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(245,240,232,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(245,240,232,.03) 1px,transparent 1px);background-size:35px 35px}
+.contact-left-content{position:relative;z-index:1}
+.contact-page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(3rem,4vw,4.5rem);color:var(--paper);line-height:.95;letter-spacing:-1.5px;margin-bottom:1.5rem}
+.contact-page-title span{color:var(--water-light)}
+.contact-desc{font-size:.95rem;color:rgba(245,240,232,.55);line-height:1.75;font-weight:300;max-width:340px;margin-bottom:3rem}
+.contact-details{display:flex;flex-direction:column;gap:1.5rem}
+.contact-detail-item{display:flex;align-items:flex-start;gap:1rem}
+.cdi-icon{width:36px;height:36px;background:rgba(37,99,235,.2);border:1px solid rgba(37,99,235,.3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.cdi-label{font-family:'Syne',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--water-light);margin-bottom:.3rem}
+.cdi-val{font-size:.9rem;color:rgba(245,240,232,.8)}
+.contact-bottom{position:relative;z-index:1;font-family:'Syne',sans-serif;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:rgba(245,240,232,.25)}
+.contact-right{padding:5rem 4%;background:var(--paper);overflow-y:auto}
+.contact-right h2{font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;color:var(--ink);margin-bottom:.5rem;letter-spacing:-.3px}
+.form-hint{font-size:.87rem;color:var(--muted);margin-bottom:2.5rem;font-weight:300;line-height:1.5}
+.enquiry-form{width:100%}
+.fg{margin-bottom:1.4rem}
+.fg label{display:block;font-family:'Syne',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem}
+.fg label .req{color:var(--water)}
+.fg input,.fg select,.fg textarea{width:100%;background:var(--cream);border:1px solid var(--border);border-radius:2px;color:var(--ink);font-family:'DM Sans',sans-serif;font-size:.95rem;padding:.85rem 1rem;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;font-weight:400}
+.fg select option{background:var(--paper);color:var(--ink)}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--water);box-shadow:0 0 0 3px rgba(37,99,235,.1);background:#fff}
+.fg input::placeholder,.fg textarea::placeholder{color:rgba(107,107,107,.5)}
+.fg textarea{resize:vertical;min-height:110px}
+.fg input.err,.fg select.err,.fg textarea.err{border-color:#dc2626}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.submit-full{width:100%;background:var(--ink);color:var(--paper);font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;letter-spacing:2px;text-transform:uppercase;padding:1.1rem;border:2px solid var(--ink);border-radius:2px;cursor:none;transition:background .2s,color .2s,border-color .2s;margin-top:.5rem}
+.submit-full:hover:not(:disabled){background:var(--water);border-color:var(--water);color:#fff}
+.submit-full:disabled{opacity:.5;cursor:not-allowed}
+.form-footnote{text-align:center;font-size:.78rem;color:var(--muted);margin-top:1rem}
+.form-feedback{display:none;padding:.9rem 1.2rem;border-radius:2px;font-size:.88rem;margin-bottom:1.5rem}
+.form-feedback.ok{display:block;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.4);color:#166534}
+.form-feedback.fail{display:block;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);color:#991b1b}
+
+/* FOOTER */
+footer{background:var(--ink);padding:3rem 5%;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-top:1px solid rgba(245,240,232,.08);gap:2rem}
+.footer-logo-wrap{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;letter-spacing:3px;text-transform:uppercase;color:var(--paper);display:flex;align-items:center;gap:8px}
+.footer-logo-wrap .dot{width:8px;height:8px;background:var(--water);border-radius:50%;display:inline-block}
+.footer-copy{font-size:.78rem;color:rgba(245,240,232,.3);text-align:center}
+.footer-right{text-align:right;font-size:.75rem;color:rgba(245,240,232,.3);font-weight:300}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .hero{grid-template-columns:1fr}.hero-right{display:none}
+  .products-grid{grid-template-columns:repeat(2,1fr)}
+  .products-grid .product-item:nth-child(2n){border-right:none}
+  .products-grid .product-item:nth-child(3){border-right:1px solid var(--border)}
+  .process-steps{grid-template-columns:repeat(2,1fr)}
+  .process-step:nth-child(2n){border-right:none}
+  .process-step:nth-child(n+3){border-top:1px solid rgba(245,240,232,.1)}
+  .about-page-hero{grid-template-columns:1fr}.aph-right{display:none}
+  .about-values{grid-template-columns:1fr 1fr}
+  .about-values .value-item:nth-child(2n){border-right:none}
+  .about-story{grid-template-columns:1fr}.story-label{position:static;font-size:2rem;margin-bottom:2rem}
+  .contact-layout{grid-template-columns:1fr}.contact-left{min-height:auto}
+  .numbers{grid-template-columns:repeat(2,1fr)}
+  .numbers .number-item:nth-child(2n){border-right:none}
+  .numbers .number-item:nth-child(n+3){border-top:1px solid var(--border)}
+  .section-home-about{grid-template-columns:1fr;gap:3rem}
+  .about-float-card{right:0;bottom:-1.5rem}
+  footer{grid-template-columns:1fr 1fr;grid-template-rows:auto auto}
+  .footer-copy{grid-column:1/-1;order:3}
+}
+@media(max-width:640px){
+  nav{padding:0 5%}.nav-links{display:none}.nav-cta-btn{display:none}.hamburger{display:flex}
+  .products-grid{grid-template-columns:1fr}
+  .products-grid .product-item{border-right:none}
+  .process-steps{grid-template-columns:1fr}
+  .process-step{border-right:none;border-bottom:1px solid rgba(245,240,232,.1)}
+  .about-values{grid-template-columns:1fr}
+  .about-values .value-item{border-right:none;border-bottom:1px solid var(--border)}
+  .form-row-2{grid-template-columns:1fr}
+  .numbers{grid-template-columns:1fr 1fr}
+  footer{grid-template-columns:1fr;text-align:center}.footer-right{text-align:center}
+}
+</style>
+</head>
+<body>
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<nav>
+  <a class="nav-logo" href="#" onclick="showPage('home');return false"><span class="nav-logo-dot"></span>DROPMARK</a>
+  <ul class="nav-links">
+    <li><a href="#" class="active" onclick="showPage('home');return false">Home</a></li>
+    <li><a href="#" onclick="showPage('products');return false">Products</a></li>
+    <li><a href="#" onclick="showPage('about');return false">About Us</a></li>
+    <li><a href="#" onclick="showPage('contact');return false">Contact Us</a></li>
+  </ul>
+  <a href="#" class="nav-cta-btn" onclick="showPage('contact');return false">Get Quote →</a>
+  <div class="hamburger" id="hamburger" onclick="toggleMobile()"><span></span><span></span><span></span></div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#" onclick="showPage('home');closeMobile();return false">Home</a>
+  <a href="#" onclick="showPage('products');closeMobile();return false">Products</a>
+  <a href="#" onclick="showPage('about');closeMobile();return false">About Us</a>
+  <a href="#" onclick="showPage('contact');closeMobile();return false">Contact Us</a>
+</div>
+
+<!-- ══ HOME ══ -->
+<div id="page-home" class="page active">
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow"><div class="hero-eyebrow-line"></div><span>Custom Label Water Bottles</span></div>
+      <h1 class="hero-title">Your Brand.<br><em>Bottled</em><br>Perfectly.</h1>
+      <p class="hero-desc">We craft custom-label water bottles for businesses, events, and corporates across India. Your logo. Your message. Every single sip.</p>
+      <div class="hero-actions">
+        <a href="#" class="btn-fill" onclick="showPage('contact');return false">Order Now</a>
+        <a href="#" class="btn-ghost" onclick="showPage('products');return false">See Products</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-visual-wrap">
+        <div class="label-tag label-tag-1">✓ BIS Certified</div>
+        <div class="label-tag label-tag-2">⚡ 48H Proof</div>
+        <div class="label-tag label-tag-3">📦 500+ Units MOQ</div>
+        <svg class="main-bottle" width="160" height="380" viewBox="0 0 160 380" fill="none">
+          <rect x="52" y="8" width="56" height="22" rx="8" fill="#2563eb"/>
+          <rect x="58" y="4" width="44" height="14" rx="6" fill="#60a5fa"/>
+          <path d="M52 30 Q46 55 44 80 L44 90 L116 90 Q114 55 108 30 Z" fill="#1e293b"/>
+          <path d="M38 90 Q34 120 33 160 L33 300 Q33 355 80 355 Q127 355 127 300 L127 160 Q126 120 122 90 Z" fill="url(#bg0)"/>
+          <rect x="40" y="160" width="80" height="120" rx="4" fill="rgba(245,240,232,.09)" stroke="rgba(96,165,250,.25)" stroke-width="1"/>
+          <rect x="52" y="175" width="56" height="5" rx="2.5" fill="rgba(96,165,250,.8)"/>
+          <rect x="56" y="188" width="48" height="3" rx="1.5" fill="rgba(245,240,232,.35)"/>
+          <rect x="60" y="197" width="40" height="2.5" rx="1.25" fill="rgba(245,240,232,.2)"/>
+          <circle cx="80" cy="235" r="20" fill="rgba(37,99,235,.25)" stroke="rgba(96,165,250,.4)" stroke-width="1.5"/>
+          <text x="80" y="241" text-anchor="middle" font-size="10" font-weight="800" fill="#60a5fa" font-family="sans-serif" letter-spacing="1">DM</text>
+          <path d="M48 115 Q46 200 47 280" stroke="rgba(255,255,255,.1)" stroke-width="5" stroke-linecap="round"/>
+          <ellipse cx="80" cy="348" rx="40" ry="6" fill="rgba(37,99,235,.2)"/>
+          <defs><linearGradient id="bg0" x1="33" y1="0" x2="127" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0f1729"/><stop offset="35%" stop-color="#162040"/><stop offset="65%" stop-color="#0f1729"/><stop offset="100%" stop-color="#080e1a"/></linearGradient></defs>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee-strip">
+    <div class="marquee-track">
+      <span>Custom Labels</span><span class="dot">◆</span><span>Corporate Gifting</span><span class="dot">◆</span><span>Event Branding</span><span class="dot">◆</span><span>Hotel & Hospitality</span><span class="dot">◆</span><span>Weddings & Parties</span><span class="dot">◆</span><span>Bulk Orders</span><span class="dot">◆</span><span>BIS Certified</span><span class="dot">◆</span><span>Pan India Delivery</span><span class="dot">◆</span>
+      <span>Custom Labels</span><span class="dot">◆</span><span>Corporate Gifting</span><span class="dot">◆</span><span>Event Branding</span><span class="dot">◆</span><span>Hotel & Hospitality</span><span class="dot">◆</span><span>Weddings & Parties</span><span class="dot">◆</span><span>Bulk Orders</span><span class="dot">◆</span><span>BIS Certified</span><span class="dot">◆</span><span>Pan India Delivery</span><span class="dot">◆</span>
+    </div>
+  </div>
+
+  <div class="numbers">
+    <div class="number-item"><div class="number-val">500<sup>+</sup></div><div class="number-label">Businesses Served Across India</div></div>
+    <div class="number-item"><div class="number-val">48<sup>H</sup></div><div class="number-label">Label Design Proof Turnaround</div></div>
+    <div class="number-item"><div class="number-val">3<sup>x</sup></div><div class="number-label">Bottle Sizes to Choose From</div></div>
+    <div class="number-item"><div class="number-val">100<sup>%</sup></div><div class="number-label">BIS Certified Pure Water</div></div>
+  </div>
+
+  <div class="section-home-about">
+    <div>
+      <div class="section-tag">What We Do</div>
+      <h2 class="about-heading">We put your brand in people's hands — literally.</h2>
+      <p class="about-body">Dropmark specializes in custom-label water bottles for B2B clients. Whether you're running a conference, launching a hotel, or gifting at a wedding — we design, produce, and deliver bottles that carry your brand with pride.</p>
+      <ul class="about-list">
+        <li>Full-wrap label design from your brand assets</li>
+        <li>BIS certified, lab-tested pure water</li>
+        <li>Factory-direct pricing with no middlemen</li>
+        <li>Flexible bulk quantities from 500 units up</li>
+        <li>Pan India delivery with tracked logistics</li>
+      </ul>
+    </div>
+    <div class="about-visual-side">
+      <div class="about-img-box">
+        <svg width="120" height="300" viewBox="0 0 120 300" fill="none">
+          <rect x="38" y="5" width="44" height="18" rx="6" fill="#2563eb"/>
+          <rect x="42" y="2" width="36" height="12" rx="5" fill="#60a5fa"/>
+          <path d="M28 23 Q24 45 23 75 L22 230 Q22 268 60 268 Q98 268 98 230 L97 75 Q96 45 92 23 Z" fill="url(#bg2)"/>
+          <rect x="29" y="118" width="62" height="90" rx="3" fill="rgba(245,240,232,.08)" stroke="rgba(96,165,250,.2)" stroke-width="1"/>
+          <rect x="37" y="130" width="46" height="4" rx="2" fill="rgba(96,165,250,.7)"/>
+          <rect x="40" y="141" width="40" height="3" rx="1.5" fill="rgba(245,240,232,.3)"/>
+          <circle cx="60" cy="178" r="16" fill="rgba(37,99,235,.3)" stroke="rgba(96,165,250,.35)" stroke-width="1"/>
+          <text x="60" y="184" text-anchor="middle" font-size="8" fill="#60a5fa" font-family="sans-serif" font-weight="800">LOGO</text>
+          <defs><linearGradient id="bg2" x1="22" y1="0" x2="98" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0f1729"/><stop offset="45%" stop-color="#162040"/><stop offset="100%" stop-color="#080e1a"/></linearGradient></defs>
+        </svg>
+        <div class="about-float-card"><div class="afc-num">48H</div><div class="afc-label">Label proof delivered to your inbox</div></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-logo-wrap"><span class="dot"></span>DROPMARK</div>
+    <div class="footer-copy">© 2025 Dropmark. All rights reserved.</div>
+    <div class="footer-right">Custom Label Water Bottles · India</div>
+  </footer>
+</div>
+
+<!-- ══ PRODUCTS ══ -->
+<div id="page-products" class="page">
+  <div class="page-hero">
+    <div class="page-hero-bg-text">PRODUCTS</div>
+    <div class="section-tag">Our Range</div>
+    <h1 class="page-title">Every Size.<br>Your Brand.</h1>
+    <p class="page-subtitle">Choose from three premium bottle formats — each fully customizable with your logo, colors, and messaging.</p>
+  </div>
+
+  <div class="products-section">
+    <div class="products-grid">
+      <div class="product-item">
+        <div class="product-num">01</div>
+        <div class="product-bottle-wrap">
+          <svg width="60" height="160" viewBox="0 0 60 160" fill="none">
+            <rect x="18" y="3" width="24" height="12" rx="4" fill="#2563eb"/>
+            <path d="M12 15 Q10 28 9 48 L9 120 Q9 142 30 142 Q51 142 51 120 L51 48 Q50 28 48 15 Z" fill="url(#pb1)"/>
+            <rect x="12" y="55" width="36" height="52" rx="2" fill="rgba(245,240,232,.07)" stroke="rgba(96,165,250,.2)" stroke-width=".5"/>
+            <rect x="17" y="62" width="26" height="3" rx="1.5" fill="rgba(96,165,250,.7)"/>
+            <circle cx="30" cy="90" r="10" fill="rgba(37,99,235,.25)" stroke="rgba(96,165,250,.3)" stroke-width=".7"/>
+            <text x="30" y="94" text-anchor="middle" font-size="5" fill="#60a5fa" font-family="sans-serif" font-weight="800">LOGO</text>
+            <defs><linearGradient id="pb1" x1="9" y1="0" x2="51" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0f1729"/><stop offset="50%" stop-color="#162040"/><stop offset="100%" stop-color="#080e1a"/></linearGradient></defs>
+          </svg>
+        </div>
+        <div class="product-item-name">250ml Mini Bottle</div>
+        <div class="product-item-desc">Compact and premium. Perfect for airlines, luxury weddings, fine dining, and premium gifting boxes. Leaves a lasting impression.</div>
+        <span class="product-badge">MOQ · 2,000 Units</span>
+      </div>
+      <div class="product-item">
+        <div class="product-num">02</div>
+        <div class="product-bottle-wrap">
+          <svg width="70" height="160" viewBox="0 0 70 160" fill="none">
+            <rect x="22" y="2" width="26" height="14" rx="5" fill="#2563eb"/>
+            <rect x="25" y="0" width="20" height="9" rx="4" fill="#60a5fa"/>
+            <path d="M14 16 Q11 30 10 55 L10 122 Q10 146 35 146 Q60 146 60 122 L60 55 Q59 30 56 16 Z" fill="url(#pb2)"/>
+            <rect x="14" y="60" width="42" height="55" rx="2" fill="rgba(245,240,232,.07)" stroke="rgba(96,165,250,.2)" stroke-width=".5"/>
+            <rect x="20" y="67" width="30" height="3.5" rx="1.75" fill="rgba(96,165,250,.8)"/>
+            <circle cx="35" cy="98" r="12" fill="rgba(37,99,235,.25)" stroke="rgba(96,165,250,.3)" stroke-width=".8"/>
+            <text x="35" y="102" text-anchor="middle" font-size="6" fill="#60a5fa" font-family="sans-serif" font-weight="800">LOGO</text>
+            <defs><linearGradient id="pb2" x1="10" y1="0" x2="60" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0f1729"/><stop offset="50%" stop-color="#162040"/><stop offset="100%" stop-color="#080e1a"/></linearGradient></defs>
+          </svg>
+        </div>
+        <div class="product-item-name">500ml Still Water</div>
+        <div class="product-item-desc">Our bestseller. Ideal for offices, corporate events, trade shows, and conferences. The perfect canvas for your full-wrap custom label.</div>
+        <span class="product-badge">MOQ · 1,000 Units</span>
+      </div>
+      <div class="product-item">
+        <div class="product-num">03</div>
+        <div class="product-bottle-wrap">
+          <svg width="76" height="160" viewBox="0 0 76 160" fill="none">
+            <rect x="24" y="2" width="28" height="14" rx="5" fill="#0ea5e9"/>
+            <rect x="27" y="0" width="22" height="9" rx="4" fill="#7dd3fc"/>
+            <path d="M12 16 Q9 32 8 58 L7 122 Q7 150 38 150 Q69 150 69 122 L68 58 Q67 32 64 16 Z" fill="url(#pb3)"/>
+            <rect x="12" y="62" width="52" height="58" rx="2" fill="rgba(245,240,232,.07)" stroke="rgba(14,165,233,.2)" stroke-width=".5"/>
+            <rect x="19" y="70" width="38" height="3.5" rx="1.75" fill="rgba(14,165,233,.8)"/>
+            <circle cx="38" cy="103" r="14" fill="rgba(14,165,233,.2)" stroke="rgba(14,165,233,.35)" stroke-width=".8"/>
+            <text x="38" y="107" text-anchor="middle" font-size="6" fill="#7dd3fc" font-family="sans-serif" font-weight="800">LOGO</text>
+            <defs><linearGradient id="pb3" x1="7" y1="0" x2="69" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#071520"/><stop offset="50%" stop-color="#0a2035"/><stop offset="100%" stop-color="#040d15"/></linearGradient></defs>
+          </svg>
+        </div>
+        <div class="product-item-name">1 Litre Premium</div>
+        <div class="product-item-desc">Maximum label surface. Best for hotels, resorts, corporate suites, and health brands. A statement piece that keeps your brand visible all day.</div>
+        <span class="product-badge">MOQ · 500 Units</span>
+      </div>
+      <div class="product-item">
+        <div class="product-num">04</div>
+        <div class="product-item-name">Label-Only Supply</div>
+        <div class="product-item-desc">Already have bottles? We supply high-quality custom-printed labels only. Full-wrap, front-only, or neck label options available on request.</div>
+        <span class="product-badge">Contact for Pricing</span>
+      </div>
+      <div class="product-item">
+        <div class="product-num">05</div>
+        <div class="product-item-name">Seasonal & Event Packs</div>
+        <div class="product-item-desc">Special packaging for Diwali gifting, New Year kits, wedding favors, and branded events. Custom packing boxes available as well.</div>
+        <span class="product-badge">Talk to Us</span>
+      </div>
+      <div class="product-item">
+        <div class="product-num">06</div>
+        <div class="product-item-name">White-Label OEM</div>
+        <div class="product-item-desc">Want to launch your own water brand? We offer complete OEM manufacturing, bottling, labeling, and logistics support end-to-end.</div>
+        <span class="product-badge">Custom Quote</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="process-section">
+    <div class="section-tag">Simple Process</div>
+    <h2 class="process-heading">From Enquiry to Delivery in 4 Steps</h2>
+    <div class="process-steps">
+      <div class="process-step"><div class="ps-num">STEP 01</div><div class="ps-title">Submit Enquiry</div><div class="ps-desc">Fill our quick order form with bottle type, quantity, delivery location, and your branding files.</div></div>
+      <div class="process-step"><div class="ps-num">STEP 02</div><div class="ps-title">Label Proof</div><div class="ps-desc">Our design team creates your custom label proof and sends it to your inbox within 48 hours.</div></div>
+      <div class="process-step"><div class="ps-num">STEP 03</div><div class="ps-title">Approve & Pay</div><div class="ps-desc">Review the proof, request any revisions, confirm your order, and make payment to begin production.</div></div>
+      <div class="process-step"><div class="ps-num">STEP 04</div><div class="ps-title">Delivery</div><div class="ps-desc">Your branded bottles are manufactured, packed, and dispatched to your location with full tracking.</div></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-logo-wrap"><span class="dot"></span>DROPMARK</div>
+    <div class="footer-copy">© 2025 Dropmark. All rights reserved.</div>
+    <div class="footer-right">Custom Label Water Bottles · India</div>
+  </footer>
+</div>
+
+<!-- ══ ABOUT ══ -->
+<div id="page-about" class="page">
+  <div class="about-page-hero">
+    <div class="aph-left">
+      <div class="section-tag">About Dropmark</div>
+      <h1 class="page-title">We believe your brand deserves to travel further.</h1>
+      <p class="page-subtitle" style="margin-top:1.5rem">A water bottle lives in people's hands, on their desks, and in their bags. We make sure yours carries your story everywhere it goes.</p>
+    </div>
+    <div class="aph-right">
+      <div class="aph-quote">"A bottle of water is the most <em>personal</em> branded item a company can give — it's touched, carried, and remembered."</div>
+    </div>
+  </div>
+
+  <div class="about-values">
+    <div class="value-item"><span class="value-icon">💧</span><div class="value-title">Purity First</div><div class="value-desc">Every bottle we produce uses BIS-certified, lab-tested water. We never compromise on what goes inside — because your brand name is on the outside.</div></div>
+    <div class="value-item"><span class="value-icon">🎨</span><div class="value-title">Design That Lands</div><div class="value-desc">Our in-house design team works with your brand guidelines to create labels that are crisp, print-ready, and impossible to ignore.</div></div>
+    <div class="value-item"><span class="value-icon">🤝</span><div class="value-title">Partner, Not Vendor</div><div class="value-desc">We work as an extension of your team. One point of contact. Zero confusion. Just a smooth process from brief to delivery.</div></div>
+  </div>
+
+  <div class="about-story">
+    <div class="story-label">Our<br>Story</div>
+    <div class="story-content">
+      <p>Dropmark was born from a simple observation: <strong>branded water bottles at Indian corporate events were either overpriced or poorly made.</strong> Businesses were settling for generic bottles with cheap stickers slapped on them — and that was never good enough.</p>
+      <p>We set out to change that. By working directly with certified bottling plants and building an in-house design process, we created a pipeline that's fast, affordable, and genuinely premium. Every bottle that leaves our facility is something you'd be proud to hand to a client.</p>
+      <p>Today, we serve <strong>500+ businesses across India</strong> — from boutique hotels in Jaipur to tech conferences in Bangalore, from wedding planners in Delhi to healthcare brands in Mumbai. The common thread: they all wanted their brand to feel polished, and we delivered.</p>
+      <p>We're not just a bottling company. We're a <strong>brand amplification platform</strong> that happens to work with water.</p>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-logo-wrap"><span class="dot"></span>DROPMARK</div>
+    <div class="footer-copy">© 2025 Dropmark. All rights reserved.</div>
+    <div class="footer-right">Custom Label Water Bottles · India</div>
+  </footer>
+</div>
+
+<!-- ══ CONTACT ══ -->
+<div id="page-contact" class="page">
+  <div class="contact-layout">
+    <div class="contact-left">
+      <div class="contact-left-content">
+        <div style="font-family:Syne,sans-serif;font-size:.72rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--water-light);margin-bottom:1.5rem;display:flex;align-items:center;gap:10px"><span style="width:30px;height:1px;background:var(--water-light);display:inline-block"></span>Get in Touch</div>
+        <h1 class="contact-page-title">Let's Brand<br>Your <span>Water.</span></h1>
+        <p class="contact-desc">Tell us what you need — size, quantity, timeline — and we'll get back within 24 hours with pricing and next steps.</p>
+        <div class="contact-details">
+          <div class="contact-detail-item"><div class="cdi-icon">📧</div><div><div class="cdi-label">Email</div><div class="cdi-val">your@gmail.com</div></div></div>
+          <div class="contact-detail-item"><div class="cdi-icon">📞</div><div><div class="cdi-label">Phone / WhatsApp</div><div class="cdi-val">+91 XXXXX XXXXX</div></div></div>
+          <div class="contact-detail-item"><div class="cdi-icon">📍</div><div><div class="cdi-label">Based In</div><div class="cdi-val">Your City, India</div></div></div>
+          <div class="contact-detail-item"><div class="cdi-icon">⚡</div><div><div class="cdi-label">Response Time</div><div class="cdi-val">Within 24 hours</div></div></div>
+        </div>
+      </div>
+      <div class="contact-bottom">DROPMARK · EST. 2025</div>
+    </div>
+    <div class="contact-right">
+      <h2>Request a Custom Quote</h2>
+      <p class="form-hint">All fields marked <span style="color:var(--water)">*</span> are required. We'll reply with pricing and a label proof within 24–48 hours.</p>
+      <div class="form-feedback" id="formMsg"></div>
+      <form class="enquiry-form" id="enquiryForm" novalidate>
+        <div class="form-row-2">
+          <div class="fg"><label>Business Name <span class="req">*</span></label><input type="text" name="business_name" placeholder="ABC Pvt. Ltd." required></div>
+          <div class="fg"><label>Contact Person <span class="req">*</span></label><input type="text" name="contact_name" placeholder="Your Full Name" required></div>
+        </div>
+        <div class="form-row-2">
+          <div class="fg"><label>Phone / WhatsApp <span class="req">*</span></label><input type="tel" name="phone" placeholder="+91 98765 43210" required></div>
+          <div class="fg"><label>Email Address <span class="req">*</span></label><input type="email" name="email" placeholder="you@company.com" required></div>
+        </div>
+        <div class="form-row-2">
+          <div class="fg"><label>Bottle Size <span class="req">*</span></label>
+            <select name="bottle_size" required><option value="">Select size...</option><option value="250ml">250ml Mini Bottle</option><option value="500ml">500ml Still Water</option><option value="1L">1 Litre Premium</option><option value="custom">Custom / Multiple Sizes</option></select>
+          </div>
+          <div class="fg"><label>Quantity Needed <span class="req">*</span></label>
+            <select name="quantity" required><option value="">Select quantity...</option><option value="500-1000">500 – 1,000 units</option><option value="1000-5000">1,000 – 5,000 units</option><option value="5000-20000">5,000 – 20,000 units</option><option value="20000+">20,000+ units</option></select>
+          </div>
+        </div>
+        <div class="fg"><label>Purpose / Use Case <span class="req">*</span></label>
+          <select name="purpose" required><option value="">Select purpose...</option><option>Corporate Office Use</option><option>Event / Conference</option><option>Hotel / Resort</option><option>Wedding / Party</option><option>Corporate Gifting</option><option>Retail / Resale / OEM</option><option>Healthcare / Pharma</option><option>Other</option></select>
+        </div>
+        <div class="fg"><label>Delivery City / State <span class="req">*</span></label><input type="text" name="city" placeholder="e.g. Delhi, Mumbai, Bangalore..." required></div>
+        <div class="fg"><label>Additional Details</label><textarea name="message" placeholder="Share your timeline, label design files, special packaging needs, or anything else..."></textarea></div>
+        <button type="submit" class="submit-full" id="submitBtn">Send Enquiry →</button>
+        <p class="form-footnote">🔒 Your information is safe with us. No spam, ever.</p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// CURSOR
+const cur=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+(function loop(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop)})();
+document.querySelectorAll('a,button').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.width='20px';cur.style.height='20px';ring.style.width='60px';ring.style.height='60px';ring.style.opacity='.3'});
+  el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';ring.style.width='36px';ring.style.height='36px';ring.style.opacity='.5'});
+});
+
+// ROUTER
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const map={home:0,products:1,about:2,contact:3};
+  document.querySelectorAll('.nav-links a').forEach(a=>a.classList.remove('active'));
+  const links=document.querySelectorAll('.nav-links a');
+  if(links[map[id]])links[map[id]].classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function toggleMobile(){document.getElementById('hamburger').classList.toggle('open');document.getElementById('mobileMenu').classList.toggle('open');document.body.style.overflow=document.getElementById('mobileMenu').classList.contains('open')?'hidden':''}
+function closeMobile(){document.getElementById('hamburger').classList.remove('open');document.getElementById('mobileMenu').classList.remove('open');document.body.style.overflow=''}
+
+// EMAILJS
+// ─────────────────────────────────────────────────
+// SETUP INSTRUCTIONS (Free):
+// 1. Go to https://www.emailjs.com → create free account
+// 2. Add Service → connect Gmail → copy Service ID
+// 3. Create Template → use these vars: {{business_name}} {{contact_name}}
+//    {{phone}} {{email}} {{bottle_size}} {{quantity}} {{purpose}} {{city}} {{message}}
+// 4. Copy Template ID + Public Key from Account page
+// 5. Paste the 3 values below:
+// ─────────────────────────────────────────────────
+const EMAILJS_PUBLIC_KEY ="YOUR_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID ="YOUR_SERVICE_ID";
+const EMAILJS_TEMPLATE_ID="YOUR_TEMPLATE_ID";
+
+emailjs.init({publicKey:EMAILJS_PUBLIC_KEY});
+
+document.getElementById('enquiryForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  const form=e.target,btn=document.getElementById('submitBtn'),msg=document.getElementById('formMsg');
+  msg.className='form-feedback';
+  form.querySelectorAll('input,select,textarea').forEach(el=>el.classList.remove('err'));
+  let valid=true;
+  form.querySelectorAll('[required]').forEach(el=>{if(!el.value.trim()){el.classList.add('err');valid=false}});
+  if(!valid){msg.className='form-feedback fail';msg.textContent='Please fill in all required fields before submitting.';return}
+  btn.disabled=true;btn.textContent='Sending...';
+  try{
+    await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,{
+      business_name:form.business_name.value,contact_name:form.contact_name.value,
+      phone:form.phone.value,email:form.email.value,bottle_size:form.bottle_size.value,
+      quantity:form.quantity.value,purpose:form.purpose.value,city:form.city.value,
+      message:form.message.value||'No additional details.',reply_to:form.email.value
+    });
+    msg.className='form-feedback ok';msg.textContent="✓ Enquiry sent! We'll get back to you within 24 hours.";form.reset();
+  }catch(err){msg.className='form-feedback fail';msg.textContent='Something went wrong. Please email us directly or try again.';console.error(err)}
+  finally{btn.disabled=false;btn.textContent='Send Enquiry →'}
+});
+document.querySelectorAll('input,select,textarea').forEach(el=>el.addEventListener('input',()=>el.classList.remove('err')));
+</script>
+</body>
+</html>
